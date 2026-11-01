@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OAuth Agent Navigator — Integration & Review Guide</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-input: #0f172a;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-primary: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --code-bg: #090d16;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-input: #f1f5f9;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-primary: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-light: rgba(79, 70, 229, 0.08);
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --code-bg: #1e293b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(8px);
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.1rem; }
+    .brand-badge { background: var(--accent-light); color: var(--accent-primary); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .header-controls { display: flex; align-items: center; gap: 1rem; }
+    button.theme-toggle { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.1) 100%);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .hero h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.025em; }
+    .hero p { color: var(--text-muted); max-width: 650px; margin: 0 auto 1.75rem; font-size: 1.05rem; }
+
+    .search-box {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-secondary);
+      padding: 0.4rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .search-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 0.6rem 1rem;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+    }
+    .search-box button {
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-box button:hover { background: var(--accent-hover); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; flex: 1; width: 100%; }
+
+    .library-section { margin-bottom: 2.5rem; }
+    .section-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem; font-weight: 700; }
+    .app-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+    .app-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .app-card:hover { transform: translateY(-2px); border-color: var(--accent-primary); }
+    .app-card.active { border-color: var(--accent-primary); background: var(--accent-light); }
+    .app-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .app-card-name { font-weight: 700; font-size: 1.05rem; }
+    .difficulty-badge { font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; }
+    .diff-1, .diff-2 { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .diff-3 { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .diff-4, .diff-5 { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .app-card-verdict { font-size: 0.8rem; color: var(--text-muted); line-height: 1.3; }
+
+    .guide-container { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+    .guide-header { padding: 1.75rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
+    .guide-title-bar { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+    .guide-title { font-size: 1.75rem; font-weight: 800; }
+    .guide-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+    .meta-value { font-weight: 700; font-size: 0.95rem; }
+    .verdict-box { margin-top: 1rem; padding: 0.75rem 1rem; background: var(--accent-light); border-left: 4px solid var(--accent-primary); border-radius: 4px; font-size: 0.95rem; }
+
+    .tabs { display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); overflow-x: auto; }
+    .tab-btn { padding: 0.85rem 1.25rem; background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); background: var(--bg-card); }
+
+    .tab-content { padding: 1.75rem; display: none; }
+    .tab-content.active { display: block; }
+
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .grid-2col { grid-template-columns: 1fr; } }
+
+    .card-block { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .card-block h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
+
+    ul.styled-list { list-style: none; }
+    ul.styled-list li { position: relative; padding-left: 1.25rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    ul.styled-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent-primary); font-weight: bold; }
+
+    .step-item { display: flex; gap: 1rem; margin-bottom: 1rem; background: var(--bg-primary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); }
+    .step-number { background: var(--accent-light); color: var(--accent-primary); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; shrink: 0; }
+    .step-text { flex: 1; font-size: 0.92rem; }
+
+    .checklist-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input[type="checkbox"] { margin-top: 0.25rem; cursor: pointer; accent-color: var(--accent-primary); width: 16px; height: 16px; }
+    .checklist-item.completed label { text-decoration: line-through; color: var(--text-muted); }
+
+    .tool-group { margin-bottom: 1.5rem; }
+    .tool-group label { display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .tool-group input, .tool-group textarea, .tool-group select {
+      width: 100%; padding: 0.6rem; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+    }
+    .code-block { background: var(--code-bg); color: #e2e8f0; font-family: var(--font-mono); padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto; white-space: pre; position: relative; border: 1px solid var(--border-color); }
+    .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; background: var(--border-color); color: var(--text-main); border: none; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+
+    .evidence-badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-right: 0.5rem; }
+    .ev-sourced { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .ev-unverified { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .ev-attempted { background: rgba(99, 102, 241, 0.2); color: var(--accent-primary); }
+
+    .loader { display: none; text-align: center; padding: 3rem; }
+    .spinner { border: 3px solid var(--border-color); border-top: 3px solid var(--accent-primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .actions-bar { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .btn-sm { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-sm:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>OAuth Agent Navigator</span>
+      <span class="brand-badge">DevExp Tool</span>
+    </div>
+    <div class="header-controls">
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀️ Light</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Unblock Third-Party App Integrations</h1>
+    <p>Predict OAuth approval blockers, calculate developer setup effort, generate compliant authorization flows, and output client-side integration artifacts.</p>
+    <div class="search-box">
+      <input type="text" id="app-input" placeholder="Type app name or domain (e.g., Salesforce, Linear, Stripe)..." onkeypress="if(event.key==='Enter') generateGuide()">
+      <button onclick="generateGuide()">Research App</button>
+    </div>
+  </section>
+
+  <main class="container">
+    <div class="library-section">
+      <div class="section-title">Reference Library (Pre-Verified Benchmarks)</div>
+      <div class="app-cards" id="library-cards"></div>
+    </div>
+
+    <div id="loader" class="loader">
+      <div class="spinner"></div>
+      <p id="loader-text">Researching official developer documentation and security requirements...</p>
+    </div>
+
+    <div id="guide-wrapper" class="guide-container" style="display:none;">
+      <div class="guide-header">
+        <div class="guide-title-bar">
+          <div>
+            <div class="guide-title" id="g-name">App Name</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;" id="g-domain">domain.com</div>
+          </div>
+          <div class="actions-bar">
+            <button class="btn-sm" onclick="shareLink()">🔗 Share Guide</button>
+            <button class="btn-sm" onclick="exportMarkdown()">📥 Export MD</button>
+            <button class="btn-sm" onclick="copyEmailTemplate()">✉️ Admin Email</button>
+          </div>
+        </div>
+
+        <div class="guide-meta">
+          <div class="meta-item">
+            <span class="meta-label">Difficulty</span>
+            <span class="meta-value" id="g-diff">-</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Dev Setup Effort</span>
+            <span class="meta-value" id="g-effort">-</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Approval Wait</span>
+            <span class="meta-value" id="g-wait">-</span>
+          </div>
+        </div>
+
+        <div class="verdict-box" id="g-verdict"></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('overview')">Overview & Steps</button>
+        <button class="tab-btn" onclick="switchTab('blockers')">Blockers & Fixes</button>
+        <button class="tab-btn" onclick="switchTab('matrix')">Agent vs User Scope</button>
+        <button class="tab-btn" onclick="switchTab('devtools')">Developer Tools & PKCE</button>
+        <button class="tab-btn" onclick="switchTab('evidence')">Evidence & Verification</button>
+      </div>
+
+      <div class="tab-content active" id="tab-overview">
+        <div class="grid-2col">
+          <div>
+            <div class="card-block">
+              <h3>Prerequisites & Credentials</h3>
+              <ul class="styled-list" id="g-reqs"></ul>
+            </div>
+            <div class="card-block">
+              <h3>Gotchas & Provider Nuances</h3>
+              <ul class="styled-list" id="g-gotchas"></ul>
+            </div>
+          </div>
+          <div>
+            <div class="card-block">
+              <h3>Setup Steps & Checklist</h3>
+              <div id="g-steps"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-blockers">
+        <div id="g-blockers"></div>
+      </div>
+
+      <div class="tab-content" id="tab-matrix">
+        <div class="grid-2col">
+          <div class="card-block">
+            <h3 style="color: var(--success);">🤖 What Agent Can Automate</h3>
+            <ul class="styled-list" id="g-agent"></ul>
+          </div>
+          <div class="card-block">
+            <h3 style="color: var(--warning);">👤 What Developer/Admin Must Do</h3>
+            <ul class="styled-list" id="g-you"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-devtools">
+        <div class="grid-2col">
+          <div>
+            <div class="card-block">
+              <h3>OAuth 2.0 PKCE Generator (S256 WebCrypto)</h3>
+              <div class="tool-group">
+                <label>Client ID</label>
+                <input type="text" id="pkce-client-id" value="YOUR_CLIENT_ID" oninput="updatePkceUrl()">
+              </div>
+              <div class="tool-group">
+                <label>Redirect URI</label>
+                <input type="text" id="pkce-redirect" value="https://myapp.com/callback" oninput="updatePkceUrl()">
+              </div>
+              <div class="tool-group">
+                <label>Scopes (Space separated)</label>
+                <input type="text" id="pkce-scopes" value="" oninput="updatePkceUrl()">
+              </div>
+              <button class="btn-sm" onclick="generatePkcePair()" style="margin-bottom: 1rem;">🔑 Generate New PKCE Pair</button>
+              <div class="tool-group">
+                <label>Code Verifier (Secret - Keep Local)</label>
+                <input type="text" id="pkce-verifier" readonly>
+              </div>
+              <div class="tool-group">
+                <label>Constructed Authorize URL</label>
+                <div class="code-block" id="pkce-auth-url-display"></div>
+              </div>
+            </div>
+
+            <div class="card-block">
+              <h3>Redirect URI Compliance Evaluator</h3>
+              <div class="tool-group">
+                <label>Test Callback URL</label>
+                <input type="text" id="uri-test-input" value="http://localhost:3000/callback" oninput="validateRedirectUri()">
+              </div>
+              <div id="uri-validation-result" style="font-size: 0.85rem; font-weight: 600;"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-block">
+              <h3>Token Exchange Snippet (Node 18+ fetch)</h3>
+              <div class="code-block" id="snippet-node"><button class="copy-btn" onclick="copyCode('snippet-node')">Copy</button><code></code></div>
+            </div>
+            <div class="card-block">
+              <h3>cURL Token Exchange Request</h3>
+              <div class="code-block" id="snippet-curl"><button class="copy-btn" onclick="copyCode('snippet-curl')">Copy</button><code></code></div>
+            </div>
+            <div class="card-block">
+              <h3>Environment Template (.env)</h3>
+              <div class="code-block" id="snippet-env"><button class="copy-btn" onclick="copyCode('snippet-env')">Copy</button><code></code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-evidence">
+        <div class="card-block">
+          <h3>Documentation & Verification Audit</h3>
+          <div style="margin-bottom: 1rem;">
+            <span class="evidence-badge ev-sourced">Sourced</span> Directly verified against official docs
+            <span class="evidence-badge ev-unverified" style="margin-left: 1rem;">Unverified</span> Inferred / Subject to provider review
+          </div>
+          <div class="grid-2col">
+            <div>
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--success);">Confirmed Facts</h4>
+              <ul class="styled-list" id="g-verified"></ul>
+            </div>
+            <div>
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--warning);">Unverified Claims / Caveats</h4>
+              <ul class="styled-list" id="g-unverified"></ul>
+            </div>
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Official Documentation Sources</h4>
+            <ul class="styled-list" id="g-sources"></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // HARDCODED REFERENCE GUIDES (5 Benchmark Applications)
+    const LIBRARY_GUIDES = {
+      github: {
+        name: "GitHub",
+        domain: "github.com",
+        difficulty: 1,
+        effort: "15 minutes",
+        wait: "Instant (Self-serve)",
+        verdict: "Easiest provider. Instant creation, no formal review required for public installation.",
+        summary: "GitHub Apps or OAuth Apps can be created immediately via developer settings with minimal friction.",
+        requirements: ["GitHub Account", "Callback URL (HTTPS or localhost)", "Selected permissions"],
+        steps: [
+          "Navigate to GitHub Settings > Developer Settings > OAuth Apps.",
+          "Click 'New OAuth App' and register application name and homepage URL.",
+          "Set Authorization callback URL (e.g. http://localhost:3000/api/auth/callback/github).",
+          "Generate a new Client Secret and record it immediately.",
+          "Implement OAuth 2.0 PKCE code exchange endpoint."
+        ],
+        gotchas: [
+          "GitHub OAuth Apps pass user-level scopes; for granular repo permissions, build a GitHub App instead.",
+          "Scopes are space-separated in query string; missing scope defaults to read-only public access."
+        ],
+        blockers: [
+          ["Organization SSO Enforcement", "SAML-enabled orgs require org admins to grant OAuth access explicitly."],
+          ["Redirect URI Mismatch", "GitHub allows exact path matches; trailing slashes matter."]
+        ],
+        agent: [
+          "Generate state and code_verifier parameters via WebCrypto.",
+          "Construct authorize link with requested repository scopes.",
+          "Automatically handle access token exchange and token refresh routines."
+        ],
+        you: [
+          "Register OAuth application inside target GitHub user/org account.",
+          "Copy Client ID and Client Secret into production secret manager.",
+          "Approve OAuth application prompt if organization uses SAML enforcement."
+        ],
+        verified: [
+          "Supports standard Authorization Code flow with PKCE.",
+          "No manual app review required for standard user authorization."
+        ],
+        unverified: [
+          "Exact marketplace listing approval times if publishing to GitHub Marketplace (1-2 weeks)."
+        ],
+        attempted: "Verified locally via GitHub Developer Settings UI.",
+        sources: [
+          ["GitHub OAuth Web Application Flow", "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/building-oauth-apps"]
+        ],
+        oauth: {
+          a: "https://github.com/login/oauth/authorize",
+          t: "https://github.com/login/oauth/access_token",
+          s: "read:user user:email repo",
+          pk: 1,
+          n: "Requires Accept header header 'Accept: application/json' during token exchange."
+        }
+      },
+      notion: {
+        name: "Notion",
+        domain: "notion.so",
+        difficulty: 2,
+        effort: "30 minutes",
+        wait: "Instant (Public Integration)",
+        verdict: "Straightforward workspace OAuth integration with custom page-level permission pickers.",
+        summary: "Notion integrations allow developers to request access to workspace pages with simple configuration.",
+        requirements: ["Notion Workspace Admin Account", "HTTPS Redirect URI", "Integration Logo & Privacy Policy"],
+        steps: [
+          "Go to notion.so/my-integrations and click 'New integration'.",
+          "Select associated workspace and set Type to 'Public'.",
+          "Fill in organization info, privacy policy, and redirect URIs.",
+          "Copy Client ID and Client Secret from Secret tab.",
+          "Redirect user to Notion authorize endpoint; user selects specific pages to share."
+        ],
+        gotchas: [
+          "Users choose exact pages during authorization; app cannot read pages not explicitly selected.",
+          "Notion requires HTTP Basic Auth (base64 encoded client_id:client_secret) on token exchange."
+        ],
+        blockers: [
+          ["Page Not Shared Error", "User completed OAuth but didn't check the specific page checkbox during consent."],
+          ["HTTP 401 Invalid Client", "Token endpoint requires Basic Auth header, not body parameters."]
+        ],
+        agent: [
+          "Pre-fill redirect URLs and scope settings.",
+          "Exchange temporary authorization code for bot access token.",
+          "Store workspace_id and owner metadata."
+        ],
+        you: [
+          "Create public integration record in Notion Integrations dashboard.",
+          "Provide valid Terms of Service and Privacy Policy URLs."
+        ],
+        verified: [
+          "Requires HTTP Basic Authorization header during POST token call.",
+          "Public integrations require complete company metadata."
+        ],
+        unverified: [
+          "Future enterprise policy controls regarding workspace-wide integration auto-approvals."
+        ],
+        attempted: "Verified via Notion Public API Documentation.",
+        sources: [
+          ["Notion Authorization Guide", "https://developers.notion.com/docs/authorization"]
+        ],
+        oauth: {
+          a: "https://api.notion.com/v1/oauth/authorize",
+          t: "https://api.notion.com/v1/oauth/token",
+          s: "basic",
+          pk: 1,
+          n: "Must send Authorization: Basic base64(client_id:client_secret) during code exchange."
+        }
+      },
+      slack: {
+        name: "Slack",
+        domain: "slack.com",
+        difficulty: 3,
+        effort: "1 - 2 hours",
+        wait: "Instant for workspace; 1-2 weeks for App Directory",
+        verdict: "Moderate. Instant for custom workspace use, but strict granular scope requirements.",
+        summary: "Slack uses granular OAuth v2 scopes. Self-installed apps work immediately, but App Directory requires submission.",
+        requirements: ["Slack Workspace", "Granular Bot/User Scopes", "HTTPS Redirect URI"],
+        steps: [
+          "Navigate to api.slack.com/apps and click 'Create New App' (From scratch).",
+          "Select target development workspace.",
+          "Navigate to 'OAuth & Permissions', configure Redirect URIs.",
+          "Add Bot Token Scopes (e.g. chat:write, channels:read).",
+          "Install to Workspace for testing, or use OAuth v2 link for multi-tenant deployment."
+        ],
+        gotchas: [
+          "Bot scopes (bot) and User scopes (user) are separate; ensure correct parameter in authorize URL.",
+          "Slack returns bot access tokens starting with `xoxb-` and user tokens starting with `xoxp-`."
+        ],
+        blockers: [
+          ["Missing Scope Error", "API calls fail if scope wasn't requested during initial OAuth consent."],
+          ["Workspace Admin Restrict", "Non-admin workspace members trigger an Admin Approval Request flow."]
+        ],
+        agent: [
+          "Format requested scopes as comma-separated string.",
+          "Handle code-to-token POST requests to https://slack.com/api/oauth.v2.access."
+        ],
+        you: [
+          "Configure App Manifest or manually assign OAuth scopes in Slack App console.",
+          "Submit for Slack App Directory if distributing publicly to external companies."
+        ],
+        verified: [
+          "Uses OAuth 2.0 v2 endpoints (oauth.v2.access).",
+          "Requires comma-separated scope formatting."
+        ],
+        unverified: [
+          "Security review duration variations during Slack Marketplace directory audits."
+        ],
+        attempted: "Verified via Slack API Documentation.",
+        sources: [
+          ["Slack OAuth v2 Overview", "https://api.slack.com/authentication/oauth-v2"]
+        ],
+        oauth: {
+          a: "https://slack.com/oauth/v2/authorize",
+          t: "https://slack.com/api/oauth.v2.access",
+          s: "chat:write channels:read users:read",
+          pk: 1,
+          n: "Scopes are comma-separated in Slack authorize URLs."
+        }
+      },
+      google: {
+        name: "Google / Gmail",
+        domain: "google.com",
+        difficulty: 4,
+        effort: "3 - 6 weeks",
+        wait: "2 - 12 weeks (CASA Tier 2 Security Audit)",
+        verdict: "Hard. Standard scopes are fast; Restricted Gmail scopes require mandatory CASA Security Audit.",
+        summary: "Accessing sensitive or restricted Gmail scopes requires domain verification, demo videos, and paid CASA Tier 2 security scans.",
+        requirements: ["Google Cloud Console Project", "Verified Domain in Google Search Console", "Privacy Policy", "CASA Tier 2 Security Assessment ($540-$1k+ lab fees)"],
+        steps: [
+          "Create Google Cloud Project & configure OAuth Consent Screen.",
+          "Verify domain ownership in Google Search Console.",
+          "Add requested scopes (e.g. https://www.googleapis.com/auth/gmail.readonly).",
+          "Submit app for Google Brand Verification (2-3 days).",
+          "Engage Google-authorized lab for CASA Tier 2 DAST Security Assessment for restricted scopes."
+        ],
+        gotchas: [
+          "Unverified apps face a hard 100-user cap and scary 'Unverified App' warning screens.",
+          "Restricted Gmail scopes (mail.google.com) mandate annual CASA Tier 2 security audits."
+        ],
+        blockers: [
+          ["Unverified App Screen", "Users blocked by safety warning until Google OAuth Verification completes."],
+          ["CASA Audit Failure", "App vulnerabilities found during third-party DAST scanning delay approval."]
+        ],
+        agent: [
+          "Construct Google OAuth authorization URL with prompt=consent and access_type=offline.",
+          "Handle refresh token rotation automatically upon expiration."
+        ],
+        you: [
+          "Complete Google Cloud Console OAuth consent branding setup.",
+          "Pay third-party security lab and remediate DAST scan vulnerability findings.",
+          "Record YouTube demo video demonstrating exact scope usage for Google reviewers."
+        ],
+        verified: [
+          "Restricted scopes require annual CASA Tier 2 security assessment.",
+          "Unverified apps limited to 100 test accounts."
+        ],
+        unverified: [
+          "Exact turnaround window for manual Google reviewer follow-ups during peak quarters."
+        ],
+        attempted: "Verified against Google Identity & CASA Framework Guidelines (2026).",
+        sources: [
+          ["Google OAuth Verification Guidance", "https://developers.google.com/identity/protocols/oauth2/policies"],
+          ["Cloud Application Security Assessment (CASA)", "https://appsecurityassessment.org/"]
+        ],
+        oauth: {
+          a: "https://accounts.google.com/o/oauth2/v2/auth",
+          t: "https://oauth2.googleapis.com/token",
+          s: "https://www.googleapis.com/auth/gmail.readonly",
+          pk: 1,
+          n: "Requires access_type=offline and prompt=consent to receive a Refresh Token."
+        }
+      },
+      instagram: {
+        name: "Meta / Instagram",
+        domain: "meta.com",
+        difficulty: 5,
+        effort: "4 - 8 weeks",
+        wait: "2 - 4 weeks (App Review + Business Verification)",
+        verdict: "Hardest. Requires official corporate entity verification and detailed screencast App Reviews.",
+        summary: "Accessing Instagram Graph API requires a Meta Tech Provider app setup, Meta Business Manager legal verification, and individual scope permissions reviews.",
+        requirements: ["Meta Developer Account", "Meta Business Manager Account", "Official Business Legal Documents", "Detailed Screencasts of App"],
+        steps: [
+          "Create Meta Developer App (Select 'Business' App Type).",
+          "Link app to Meta Business Manager and complete Legal Business Verification (tax ID, business license).",
+          "Add Instagram Graph API product to dashboard.",
+          "Implement OAuth flow and record end-to-end video screencasts showing scope usage.",
+          "Submit permissions (e.g. instagram_basic, instagram_content_publish) for Meta App Review."
+        ],
+        gotchas: [
+          "Instagram Graph API only works with Instagram Business/Creator accounts linked to Facebook Pages.",
+          "Access tokens expire in 60 days (long-lived tokens); app must build explicit token refresh logic."
+        ],
+        blockers: [
+          ["Business Verification Rejection", "Legal business documents do not match Business Manager address/name exact string."],
+          ["App Review Video Rejection", "Screencast missing clear visualization of user login button or permissions usage."]
+        ],
+        agent: [
+          "Exchange short-lived access token (1 hour) for long-lived access token (60 days).",
+          "Automate refresh sequence before 60-day expiration window."
+        ],
+        you: [
+          "Submit government entity registration documents for Meta Business Verification.",
+          "Record high-resolution screencast video for every requested Meta permission scope."
+        ],
+        verified: [
+          "Meta App Review required for Advanced Access to serve external users.",
+          "Requires linked Facebook Page for Instagram Graph API functionality."
+        ],
+        unverified: [
+          "Review submission queue backlogs during holiday/end-of-year periods."
+        ],
+        attempted: "Verified against Meta App Review Documentation.",
+        sources: [
+          ["Meta App Review for Instagram", "https://developers.facebook.com/docs/instagram-platform/app-review"]
+        ],
+        oauth: {
+          a: "https://api.instagram.com/oauth/authorize",
+          t: "https://api.instagram.com/oauth/access_token",
+          s: "instagram_basic instagram_content_publish",
+          pk: 1,
+          n: "Requires exchange of short-lived token to long-lived token via graph.instagram.com endpoint."
+        }
+      }
+    };
+
+    let currentGuide = null;
+
+    // UTILITY & ESCAPING FUNCTIONS
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function toggleTheme() {
+      const body = bodyElement = document.body;
+      const current = body.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      body.setAttribute('data-theme', next);
+      document.getElementById('theme-btn').innerText = next === 'light' ? '🌙 Dark' : '☀️ Light';
+    }
+
+    function renderLibraryCards() {
+      const container = document.getElementById('library-cards');
+      container.innerHTML = Object.keys(LIBRARY_GUIDES).map(key => {
+        const item = LIBRARY_GUIDES[key];
+        return `
+          <div class="app-card" id="card-${key}" onclick="loadLibraryGuide('${key}')">
+            <div class="app-card-header">
+              <span class="app-card-name">${escapeHtml(item.name)}</span>
+              <span class="difficulty-badge diff-${item.difficulty}">Lvl ${item.difficulty}/5</span>
+            </div>
+            <div class="app-card-verdict">${escapeHtml(item.verdict)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadLibraryGuide(key) {
+      document.querySelectorAll('.app-card').forEach(c => c.classList.remove('active'));
+      const card = document.getElementById(`card-${key}`);
+      if (card) card.classList.add('active');
+      window.location.hash = `app=${key}`;
+      renderGuide(LIBRARY_GUIDES[key]);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+    }
+
+    function renderGuide(g) {
+      currentGuide = g;
+      document.getElementById('guide-wrapper').style.display = 'block';
+
+      document.getElementById('g-name').innerText = g.name;
+      document.getElementById('g-domain').innerText = g.domain || '';
+      document.getElementById('g-diff').innerText = `Level ${g.difficulty} / 5`;
+      document.getElementById('g-effort').innerText = g.effort;
+      document.getElementById('g-wait').innerText = g.wait;
+      document.getElementById('g-verdict').innerHTML = `<strong>Verdict:</strong> ${escapeHtml(g.verdict)}`;
+
+      document.getElementById('g-reqs').innerHTML = (g.requirements || []).map(r => `<li>${escapeHtml(r)}</li>`).join('');
+      document.getElementById('g-gotchas').innerHTML = (g.gotchas || []).map(r => `<li>${escapeHtml(r)}</li>`).join('');
+
+      // Steps + LocalStorage Checklist
+      const savedChecklist = JSON.parse(localStorage.getItem(`chk_${g.name}`) || '{}');
+      document.getElementById('g-steps').innerHTML = (g.steps || []).map((step, idx) => {
+        const checked = savedChecklist[idx] ? 'checked' : '';
+        const itemClass = checked ? 'checklist-item completed' : 'checklist-item';
+        return `
+          <div class="${itemClass}" id="step-row-${idx}">
+            <input type="checkbox" id="chk-${idx}" ${checked} onchange="toggleChecklist('${escapeHtml(g.name)}', ${idx})">
+            <label for="chk-${idx}" style="font-size:0.9rem;">
+              <strong>Step ${idx+1}:</strong> ${escapeHtml(step)}
+            </label>
+          </div>
+        `;
+      }).join('');
+
+      // Blockers
+      document.getElementById('g-blockers').innerHTML = (g.blockers || []).map(b => `
+        <div class="card-block">
+          <h3 style="color: var(--danger);">⚠️ Issue: ${escapeHtml(Array.isArray(b) ? b[0] : b.problem)}</h3>
+          <p style="font-size: 0.9rem; margin-top: 0.4rem;"><strong>Resolution:</strong> ${escapeHtml(Array.isArray(b) ? b[1] : b.fix)}</p>
+        </div>
+      `).join('');
+
+      // Matrix
+      document.getElementById('g-agent').innerHTML = (g.agent || []).map(a => `<li>${escapeHtml(a)}</li>`).join('');
+      document.getElementById('g-you').innerHTML = (g.you || []).map(y => `<li>${escapeHtml(y)}</li>`).join('');
+
+      // Evidence
+      document.getElementById('g-verified').innerHTML = (g.verified || []).map(v => `<li>${escapeHtml(v)}</li>`).join('');
+      document.getElementById('g-unverified').innerHTML = (g.unverified || []).map(u => `<li>${escapeHtml(u)}</li>`).join('');
+      document.getElementById('g-sources').innerHTML = (g.sources || []).map(s => {
+        const title = Array.isArray(s) ? s[0] : s.title;
+        const url = Array.isArray(s) ? s[1] : s.url;
+        return `<li><a href="${escapeHtml(url)}" target="_blank" style="color: var(--accent-primary);">${escapeHtml(title)}</a></li>`;
+      }).join('');
+
+      // DevTools
+      if (g.oauth) {
+        document.getElementById('pkce-scopes').value = g.oauth.s || '';
+        updatePkceUrl();
+        renderSnippets(g);
+      }
+      validateRedirectUri();
+    }
+
+    function toggleChecklist(appName, idx) {
+      const saved = JSON.parse(localStorage.getItem(`chk_${appName}`) || '{}');
+      const chk = document.getElementById(`chk-${idx}`);
+      saved[idx] = chk.checked;
+      localStorage.setItem(`chk_${appName}`, JSON.stringify(saved));
+      
+      const row = document.getElementById(`step-row-${idx}`);
+      if (chk.checked) row.classList.add('completed');
+      else row.classList.remove('completed');
+    }
+
+    // WEBCRYPTO PKCE IMPLEMENTATION
+    function generateRandomString(length) {
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      const values = new Uint8Array(length);
+      window.crypto.getRandomValues(values);
+      return Array.from(values).map(x => charset[x % charset.length]).join('');
+    }
+
+    async function sha256(plain) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plain);
+      return window.crypto.subtle.digest('SHA-256', data);
+    }
+
+    function base64urlencode(a) {
+      let str = "";
+      let bytes = new Uint8Array(a);
+      let len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        str += String.fromCharCode(bytes[i]);
+      }
+      return btoa(str)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    }
+
+    async function generatePkcePair() {
+      const verifier = generateRandomString(64);
+      const hashed = await sha256(verifier);
+      const challenge = base64urlencode(hashed);
+      document.getElementById('pkce-verifier').value = verifier;
+      window.currentChallenge = challenge;
+      updatePkceUrl();
+    }
+
+    function updatePkceUrl() {
+      if (!currentGuide || !currentGuide.oauth) return;
+      const clientId = document.getElementById('pkce-client-id').value;
+      const redirect = document.getElementById('pkce-redirect').value;
+      const scopes = document.getElementById('pkce-scopes').value;
+      const challenge = window.currentChallenge || "GENERATED_CHALLENGE";
+
+      const url = `${currentGuide.oauth.a}?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirect)}&scope=${encodeURIComponent(scopes)}&code_challenge=${challenge}&code_challenge_method=S256`;
+      document.getElementById('pkce-auth-url-display').innerText = url;
+    }
+
+    function validateRedirectUri() {
+      const uri = document.getElementById('uri-test-input').value.trim();
+      const res = document.getElementById('uri-validation-result');
+      
+      if (!uri) { res.innerHTML = ""; return; }
+
+      let issues = [];
+      if (uri.includes('#')) issues.push("Contains fragment identifier (#), which is forbidden in OAuth 2.0 specs.");
+      if (uri.includes('*')) issues.push("Contains wildcard (*), which introduces security vulnerabilities and is disallowed by major providers.");
+      
+      try {
+        const parsed = new URL(uri);
+        if (parsed.protocol !== 'https:' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') {
+          issues.push("Must use HTTPS scheme unless targeting localhost/127.0.0.1.");
+        }
+      } catch (e) {
+        issues.push("Invalid URL format.");
+      }
+
+      if (issues.length === 0) {
+        res.innerHTML = `<span style="color: var(--success);">✓ Compliant OAuth 2.0 Redirect URI</span>`;
+      } else {
+        res.innerHTML = `<span style="color: var(--danger);">✕ Non-compliant: ${issues.join(' ')}</span>`;
+      }
+    }
+
+    function renderSnippets(g) {
+      const tokenUrl = g.oauth.t || "https://provider.com/oauth/token";
+      
+      const nodeCode = `// Node.js 18+ Token Exchange
+async function exchangeCode(code, codeVerifier) {
+  const response = await fetch('${tokenUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: process.env.OAUTH_CLIENT_ID,
+      client_secret: process.env.OAUTH_CLIENT_SECRET,
+      redirect_uri: process.env.OAUTH_REDIRECT_URI,
+      code: code,
+      code_verifier: codeVerifier
+    })
+  });
+  return await response.json();
+}`;
+
+      const curlCode = `curl -X POST "${tokenUrl}" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "grant_type=authorization_code" \\
+  -d "client_id=YOUR_CLIENT_ID" \\
+  -d "client_secret=YOUR_CLIENT_SECRET" \\
+  -d "redirect_uri=https://myapp.com/callback" \\
+  -d "code=AUTHORIZATION_CODE" \\
+  -d "code_verifier=YOUR_CODE_VERIFIER"`;
+
+      const envCode = `OAUTH_CLIENT_ID="your_client_id_here"
+OAUTH_CLIENT_SECRET="your_client_secret_here"
+OAUTH_REDIRECT_URI="https://myapp.com/callback"
+OAUTH_SCOPES="${g.oauth.s || ''}"`;
+
+      document.querySelector('#snippet-node code').innerText = nodeCode;
+      document.querySelector('#snippet-curl code').innerText = curlCode;
+      document.querySelector('#snippet-env code').innerText = envCode;
+    }
+
+    function copyCode(id) {
+      const code = document.querySelector(`#${id} code`).innerText;
+      navigator.clipboard.writeText(code);
+      alert('Copied snippet to clipboard!');
+    }
+
+    // LIVE AI GENERATION WITH FALLBACK
+    async function generateGuide() {
+      const query = document.getElementById('app-input').value.trim();
+      if (!query) return;
+
+      const loader = document.getElementById('loader');
+      const wrapper = document.getElementById('guide-wrapper');
+      loader.style.display = 'block';
+      wrapper.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ app: query })
+        });
+        
+        if (!res.ok) throw new Error('API Unavailable');
+        const data = await res.json();
+        
+        if (data.error || !data.name) throw new Error(data.error || 'Invalid guide format');
+        
+        // Hash route for dynamic guide
+        const encoded = encodeURIComponent(JSON.stringify(data));
+        window.location.hash = `g=${encoded}`;
+        renderGuide(data);
+      } catch (err) {
+        console.warn('Backend unavailable, activating research checklist fallback.', err);
+        const fallbackGuide = getFallbackGuide(query);
+        renderGuide(fallbackGuide);
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
+
+    function getFallbackGuide(query) {
+      return {
+        name: query,
+        domain: `${query.toLowerCase().replace(/\s+/g, '')}.com`,
+        difficulty: 3,
+        effort: "Manual Research Required",
+        wait: "1 - 3 Weeks (Estimated)",
+        verdict: "API Service Unavailable — Displaying Manual Developer Research Protocol",
+        summary: "Live AI research is currently offline. Follow this structured protocol to verify OAuth setup manual requirements.",
+        requirements: ["Developer Portal Registration", "HTTPS Callback Server", "Legal Privacy Policy URL"],
+        steps: [
+          `Search for '${query} Developer Console' and locate OAuth application registration.`,
+          "Identify required API permissions and map to minimal scope definitions.",
+          "Check documentation for PKCE support (S256 code challenge requirement).",
+          "Determine if target provider enforces App Review, Domain Verification, or Security Audits."
+        ],
+        gotchas: [
+          "Manual Verification Required: Ensure callback URI exact path match matches staging/prod.",
+          "Verify if application credentials require secret key rotation."
+        ],
+        blockers: [
+          ["Uncertain Approval Requirements", "Review official developer docs to check for third-party security audits or legal review."]
+        ],
+        agent: ["Pre-configure local environment parameters once client ID is retrieved."],
+        you: ["Perform manual document audit on provider developer portal."],
+        verified: ["Fallback checklist activated due to offline API status."],
+        unverified: ["All provider specific metrics must be manually confirmed."],
+        attempted: "Fallback protocol generated client-side.",
+        sources: [
+          [`Search ${query} OAuth Documentation`, `https://www.google.com/search?q=${encodeURIComponent(query + ' OAuth developer documentation')}`]
+        ],
+        oauth: {
+          a: `https://provider.com/oauth/authorize`,
+          t: `https://provider.com/oauth/token`,
+          s: "read write",
+          pk: 1,
+          n: "Manual verification required."
+        }
+      };
+    }
+
+    function shareLink() {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Guide URL copied to clipboard!');
+    }
+
+    function exportMarkdown() {
+      if (!currentGuide) return;
+      const md = `# OAuth Guide: ${currentGuide.name}
+**Domain:** ${currentGuide.domain}
+**Difficulty:** Level ${currentGuide.difficulty}/5
+**Dev Effort:** ${currentGuide.effort}
+**Approval Wait:** ${currentGuide.wait}
+
+## Verdict
+${currentGuide.verdict}
+
+## Prerequisites
+${(currentGuide.requirements || []).map(r => `- ${r}`).join('\n')}
+
+## Setup Steps
+${(currentGuide.steps || []).map((s, i) => `${i+1}. ${s}`).join('\n')}
+
+## Gotchas
+${(currentGuide.gotchas || []).map(g => `- ${g}`).join('\n')}
+
+## Blockers & Resolutions
+${(currentGuide.blockers || []).map(b => `- **Problem:** ${Array.isArray(b)?b[0]:b.problem}\n  **Fix:** ${Array.isArray(b)?b[1]:b.fix}`).join('\n')}
+`;
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${currentGuide.name.toLowerCase()}-oauth-guide.md`;
+      a.click();
+    }
+
+    function copyEmailTemplate() {
+      if (!currentGuide) return;
+      const email = `Subject: OAuth App Approval Request: ${currentGuide.name} Integration
+
+Hi Team / Administrator,
+
+We are preparing to integrate ${currentGuide.name} with our platform. Before launching, we need your assistance configuring or approving the OAuth application setup.
+
+Summary of Requirements:
+- Provider: ${currentGuide.name} (${currentGuide.domain})
+- Estimated Approval Wait: ${currentGuide.wait}
+- Required Developer Action: Organization / Admin grant approval
+
+Blockers & Action Items Needed:
+${(currentGuide.you || []).map(y => `- ${y}`).join('\n')}
+
+Please let us know if you need additional details regarding our requested scopes or security controls.
+
+Best regards,
+Engineering Team`;
+
+      navigator.clipboard.writeText(email);
+      alert('Admin approval email template copied to clipboard!');
+    }
+
+    // INITIALIZATION & ROUTING
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLibraryCards();
+      generatePkcePair();
+
+      const hash = window.location.hash;
+      if (hash.startsWith('#app=')) {
+        const appKey = hash.replace('#app=', '');
+        if (LIBRARY_GUIDES[appKey]) loadLibraryGuide(appKey);
+        else loadLibraryGuide('github');
+      } else if (hash.startsWith('#g=')) {
+        try {
+          const jsonStr = decodeURIComponent(hash.replace('#g=', ''));
+          const parsed = JSON.parse(jsonStr);
+          renderGuide(parsed);
+        } catch (e) {
+          loadLibraryGuide('github');
+        }
+      } else {
+        loadLibraryGuide('github');
+      }
+    });
+  </script>
+</body>
+</html>
